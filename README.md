@@ -6,50 +6,55 @@
 - [Installation](#installation)
 - [References](#references)
 
-# CellTypeAnalyzer
+# Cell-TypeAnalyzer
 <!-- toc -->
 
 <a name="general"></a>
 ## General
-> This is an ImageJ or Fiji [[1]](#1) plugin to identify, characterize, quantify and classify cells according to user-defined conditions.
+> A flexible Fiji/ImageJ plugin to classify cells according to user-defined criteria.
 <p align="center">
-  <img width="800" height="450" src="https://user-images.githubusercontent.com/83207172/122888698-5e665880-d342-11eb-8fff-561892d8203a.jpg">
+  <img width="800" height="450" src="https://user-images.githubusercontent.com/83207172/131348355-36f60ca4-0dd2-40ca-9c69-ec45196fef28.png">
 </p>
 
 **_Note_:** This plugin (currently) only supports 2D images from microscope three-channel acquisition in RGB form with each channel with same dimension and magnification: 24-bit RGB (24-bit with 8-bits per channel red, green and blue) or Color Composite (each channel can be kept as 16-bit and more than 3 channels can be merged and kept separate). This plugin may work with RGB images while it does not work with RGB stack.
 <a name="overview-of-procedure"></a>
 ## Overview of Procedure
-The main procedure implemented in **_Cell Type Analyzer_** was split into separate stages, each corresponding to pre-processing and post-processing actions involved. The workflow is performed navigating through wizards until appropriate outputs are achieved.
+  **_Cell-TypeAnalyzer_** can work with images with up to three color channels. One of the channels, called Marker I, defines what a cell is and what is not. This channel can be a marker of cytoplasm, nuclei, or any other cellular structure of interest. Once we have identified cells with Marker I, Markers II and III will define the cell types. 
+ 
+ A high-level overview of the Cell-TypeAnalyzer procedure involved is shown (see Fig.~\ref{fig:overview}). The processing actions consists of six major stages:  
 
-**I.** RGB images are loaded from `absolute path` to be displayed as a multi-channel stack and then processed, channel correspondence between source image and software just as labeling for each marker is configured, spatial calibration based on physical units (microns, nm...) is set, drawing a sub-region (closed area) of interest for analysis and RGB-clickable histogram for mean intensity pixel value. 
+**(Step I).** After loading the raw RGB images, we need to establish the correspondence between the color channels and the marker names and roles. At this point, we may perform a spatial calibration (give the pixel size in physical units) to get measurements in real length units or pixels otherwise. We may also restrict the analysis to a Region-of-interest (ROI) that must be a closed shape. The plugin shows a histogram of the pixel values in each one of the channels as visual feedback.
  
 <p align="center">
-  <img width="900" height="450" src="https://user-images.githubusercontent.com/83207172/122892387-a2a72800-d345-11eb-8f0b-610b49fa33d1.jpg">
+  <img width="900" height="450" src="https://user-images.githubusercontent.com/83207172/131348505-22ec1651-d1cb-4487-a98f-6cd4cecbf967.png">
 </p>
 
-**II.** ***Single Cell Segmentation, Detection and Identification through DAPI.*** Most appropriate `Auto-Threshold Global Method` to isolate objects of interest from background, `Watershed` filtering or not whose aim is to separate connected objects to be identified as individuals, single cell detection along with `Data Table` showing physical features together with identifiers associated with each nucleus detected and a `Summary Table` based on selected metric (marker-label, N, Sum, Mean, Median, Variance, stdDev, min, max, Q1, Q3 and IQR), possibility to apply an initial filtering based on a collection of threshold metrics to select a subset from initial detections and lastly, delineating of detections along with visualization through `ROIManager` tool.
+**(Step II).** ***The next step is the identification of the cells based on Marker I.*** To isolate cells from their background, we offer multiple possibilities. All of them respond to an auto-thresholding with different methods to binarize the image, then a watershed filtering may be applied to separate connected cells. Then single-cell contours are detected and boundaries traced. Once done, geometrical and image features are extracted from each cell, and each cell obtains a unique ID number. The plugin shows at this point a summary of the detected features through some descriptive statistics (mean, median, variance, standard deviation, minimum, maximum, quantiles, and inter-quantile range, etc.). The user may now apply filters based on these features to keep only the relevant cells for their study.
+<p align="center">
+  <img width="900" height="450" src="https://user-images.githubusercontent.com/83207172/131348646-9eb52f06-f984-44a2-867c-c19498dc7177.png">
+</p>
 
+**(Step III).** ***Morphological operators (erosion or dilation) may be applied to the cell contours to alter their original size.*** These operations allow the measurements on Marker II to be performed in a region that coincides with the area detected by Marker I (no operation), a smaller region (erosion), or a larger region (dilation). We may also perform a ''Bright Spots'' analysis to count small bright dots within each cell. Then we will compute geometrical and image features from Marker II in the selected regions. Finally, we may create cell types and, to each one, add as many constraints based on the Marker II features as needed.
+
+<p align="center">
+  <img width="800" height="450" src="https://user-images.githubusercontent.com/83207172/131348971-2afce5e4-03ec-41cf-9d76-c6607047fdba.png">
+</p>
 ######   **Scriptable Pre-Processing Actions.** 
 Additionally, by clicking on `Script Button`, a dialog window will be displayed in which user will be prompted to browse for either `macros (.txt or .ijm for ImageJ 1.x macros)` or `scripts files (.js for javascript, .bsh for beanshell or .py for python)` to be opened and then, using the `Run button`, run it. It may be worth noting either macros or script files must contain a `"_"` (underscore) character, e.g. `"HelloWorld_.py"` to be recognised. In addition, users are provided by a script editor to write their own code in any of ImageJ's supported languages `(BeanShell, JavaScript, Macro or Python)` without saving or even, likewise, copying it to the clipboard `(crtl-a, ctrl-c)` and paste `(ctrl-v)` on script editor area, then run it. Either way, whether running is successful, pre-processing actions under the code will be applied to objects belonging DAPI channel.
+
+**(Step IV).** ***We repeat the same actions as in Step III, but now on Marker III.*** Then, we can add the constraints on Marker III to the definition of each cell type. Cells are assigned to each one of the types if they meet all the conditions on Markers II and III. Note that cell types can also involve conditions solely on Marker II or Marker III.
 <p align="center">
-  <img width="800" height="450" src="https://user-images.githubusercontent.com/83207172/122895187-282bd780-d348-11eb-80af-23ead625be16.jpg">
+  <img width="800" height="450" src="https://user-images.githubusercontent.com/83207172/131349089-02344753-27ec-4175-9de5-80317b6676b4.png">
 </p>
 
-**III.** ***Customized Analysis for marker I.*** Applying morphological filters (erosion or dilation) for single detection outlines, check to get `Foci per Nucleus Analysis` for counting small bright dots per nucleus, `Data Table` showing physical features together with identifiers for single-cell nevertheless mean intensity values are tailored for selected marker, a `Summary Table` based on selected metric is supplied and a selection of physical features along with a threshold associated is required to customize classification in marker I for single cell positive identification
+ **(Step V).** ***The last interactive step allows us to configure a dynamic scatter plot to display any cell feature as a function of any other.*** Data points will represent relevant cells (those passing the criteria of a valid cell according to Marker I) being colored depending on their cell type or in gray if they do not fulfill the criteria of any defined cell type. Finally, we may save an XML configuration file that will allow us to run this analysis in batch mode for many images (Step VI).
 <p align="center">
-  <img width="800" height="450" src="https://user-images.githubusercontent.com/83207172/122896388-51993300-d349-11eb-9f25-8ce303ee5bac.jpg">
+  <img width="800" height="450" src="https://user-images.githubusercontent.com/83207172/131349143-1beca0b9-3f01-4153-bc1f-ed2c1ffa14e6.png">
 </p>
 
-**IV.** ***Customized Analysis for marker II.*** Same actions as aforementioned step but now, user is allow to configure a class defined by a set of physical features for both marker I and II whereby cells that are double-labeled and hence overlaps, are considered as double-positive cells.
+**(Step VI).** In this step, we apply the image analysis steps defined above (cell segmentation, region operations, etc.) and classify the detected cells into the user-defined cell types to a large number of images that have been acquired with similar characteristics as the one that served to set up the analysis. This execution is performed in batch mode and produces text or Excel files with the results for each image and a summary for the whole set.
 <p align="center">
-  <img width="800" height="450" src="https://user-images.githubusercontent.com/83207172/122896978-e1d77800-d349-11eb-8995-ec00fd5a34cc.jpg">
-</p>
-
-**V.** ***Configurable dynamic scatter-plot.*** Plot any kind of physical feature related to each marker as a function of another, providing the option to apply curve fitting models that best fits data and then get some statistical analysis.
-######   **Run CellTypeAnalyzer in Batch-Mode.** 
-Load `.XML Configuration file` which may be saved from single analysis to run ***CellTypeAnalyzer*** for large sets of images. This file contains the whole pre-processing actions and most suitable parameters picked by user throughout single image analysis.  
-<p align="center">
-  <img width="800" height="450" src="https://user-images.githubusercontent.com/83207172/122899688-53182a80-d34c-11eb-8475-e1b1b91b7008.jpg">
+  <img width="800" height="450" src="https://user-images.githubusercontent.com/83207172/131349231-7256837a-ef6a-4468-b428-94f10db5b451.png">
 </p>
 
 <a name="installation"></a>
