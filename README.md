@@ -4,7 +4,9 @@
 - [General](#general)
 - [Overview of Procedure](#overview-of-procedure)
 - [Installation](#installation)
+- [Video Tutorials](#video-tutorials)
 - [References](#references)
+
 
 # Cell-TypeAnalyzer
 <!-- toc -->
@@ -65,6 +67,15 @@ The ***CellTypeAnalyzer*** plugin may be installed in Fiji or ImageJ by followin
 1. In the event of not having ImageJ or Fiji already installed, please navigate through [https://imagej.nih.gov/ij/download.html](https://imagej.nih.gov/ij/download.html), download it and then, install it on a computer with Java pre-installed in either Windows, Mac OS or Linux systems.
 2.  Once done, download the plugin JAR file named as [CellTypeAnalyzer_.jar](https://github.com/QuantitativeImageAnalysisUnitCNB/CellTypeAnalyzer/blob/master/CellTypeAnalyzer_.jar) from repository.
 3.  Move this file into the `ImageJ/Fiji "plugins" subfolder`, or differently, by dragging and dropping into the `ImageJ/Fiji main window` or optionally, running through menu bar `"Plugins"` **→** `"Install"` **→**  `‘Path to File’`. Then restart either ImageJ or Fiji and it is about time to start using "CellTypeAnalyzer".
+
+<a name="video-tutorials"></a>
+## Video Tutorials 
+### Running Cell-TypeAnalyzer in batch-mode
+
+https://user-images.githubusercontent.com/83207172/145421615-7b3b9a0e-96b2-4395-bd72-3c3dfbd8d550.mp4
+
+### Running Cell-TypeAnalyzer for single-image
+https://user-images.githubusercontent.com/83207172/145422218-4af40a00-ff3c-4953-a64f-bd457004c3ce.mp4
 
 <a name="references"></a>
 ## References
