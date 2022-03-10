@@ -256,7 +256,7 @@ public class JFrameWizard extends JFrame implements Wizard {
 		wizardPageContainerConstraint.gridy = 0;
 		wizardPageContainerConstraint.insets = new Insets(5, 5, 5, 5);
 		JScrollPane scrollPane = new JScrollPane(wizardPageContainer);
-		scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+		scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 		getContentPane().add(scrollPane, wizardPageContainerConstraint);
 

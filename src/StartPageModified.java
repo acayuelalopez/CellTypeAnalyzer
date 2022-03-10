@@ -1,3 +1,4 @@
+import java.awt.AWTEvent;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -23,6 +24,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.lang.reflect.Field;
@@ -31,13 +33,18 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.Vector;
 import java.util.prefs.Preferences;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
+import javax.accessibility.Accessible;
+import javax.swing.AbstractAction;
 import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -52,6 +59,7 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -69,6 +77,9 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 import javax.swing.JViewport;
+import javax.swing.KeyStroke;
+import javax.swing.ListCellRenderer;
+import javax.swing.ListModel;
 import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
 import javax.swing.ScrollPaneConstants;
@@ -82,6 +93,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.plaf.basic.ComboPopup;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
@@ -90,12 +102,14 @@ import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.plot.IntervalMarker;
+
 import org.jfree.chart.annotations.*;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.Macro;
 import ij.WindowManager;
 import ij.gui.Roi;
+import ij.gui.ShapeRoi;
 import ij.macro.Interpreter;
 import ij.measure.Calibration;
 import ij.measure.Measurements;
@@ -111,6 +125,8 @@ import ij.plugin.frame.RoiManager;
 import ij.process.ImageProcessor;
 import ij.process.ImageStatistics;
 import ij.text.TextWindow;
+import inra.ijpb.morphology.Morphology;
+import inra.ijpb.morphology.strel.SquareStrel;
 
 @SuppressWarnings("serial")
 public class StartPageModified extends AbstractWizardPage {
@@ -166,6 +182,15 @@ public class StartPageModified extends AbstractWizardPage {
 			"Min", "Max", "Q1", "Q3", "IQR" };
 	static List<String> textSaved = new ArrayList<String>();;
 	JCheckBox checkWater;
+	private CheckedComboBox comboP;
+	CheckableItem[] itemsPreprocessing;
+	JTextField ECtext = new JTextField(5), GBtext = new JTextField(5), medianText = new JTextField(5),
+			meanText = new JTextField(5), USr = new JTextField(5), USm = new JTextField(5), minText = new JTextField(5),
+			maxText = new JTextField(5), varText = new JTextField(5);
+	// JButton buttonParameters = new JButton("Process");
+	double ecDouble = 0, gbDouble = 0, medianDouble = 0, meanDouble = 0, usrDouble = 0, usmDouble = 0, minDouble = 0,
+			maxDouble = 0, varDouble = 0;
+	UserDialog userDialog;
 
 	public StartPageModified() {
 
@@ -208,7 +233,7 @@ public class StartPageModified extends AbstractWizardPage {
 		pviewButton.setToolTipText("Click this button to make a preview for image size.");
 		JButton pviewButton1 = new JButton("");
 		pviewButton1.setIcon(PreviewCell);
-		pviewButton1.setToolTipText("Click this button to make a preview for thresholding.");
+		pviewButton1.setToolTipText("Click this button to detect cells.");
 		pviewButton1.setMaximumSize(new Dimension(170, 80));
 		JPanel panelW = new JPanel(new FlowLayout());
 		panelW.add(labelW);
@@ -397,7 +422,93 @@ public class StartPageModified extends AbstractWizardPage {
 		cellLabel.setBorder(BorderFactory.createTitledBorder(""));
 		JPanel boxCell = new JPanel();
 		boxCell.setLayout(new BoxLayout(boxCell, BoxLayout.Y_AXIS));
+		itemsPreprocessing = new CheckableItem[] { new CheckableItem("Smooth", false),
+				new CheckableItem("Sharpen", false), new CheckableItem("Enhance Contrast", false),
+				new CheckableItem("Gaussian Blur", false), new CheckableItem("Median", false),
+				new CheckableItem("Mean", false), new CheckableItem("Unsharp Mask", false),
+				new CheckableItem("Minimum", false), new CheckableItem("Maximum", false),
+				new CheckableItem("Variance", false) };
+		comboP = new CheckedComboBox<>(new DefaultComboBoxModel<>(itemsPreprocessing));
+		comboP.setOpaque(true);
+		comboP.setToolTipText("Select a pre-processing action to be applied.");
+		comboP.setSelectedItem(itemsPreprocessing[0]);
+		// JFrame frameParameters = new JFrame("Parameters for Pre-Processing Actions
+		// ");
+		Component[] components = null;
+		JPanel panelEC = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		panelEC.add(new JLabel("-Enhance Contrast:         saturated pixels="));
+		panelEC.add(ECtext);
+		components = panelEC.getComponents();
+		for (Component component : components)
+			component.setEnabled(false);
+		JPanel panelGB = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		panelGB.add(new JLabel("-Gaussian Blur:            sigma="));
+		panelGB.add(GBtext);
+		components = panelGB.getComponents();
+		for (Component component : components)
+			component.setEnabled(false);
+		JPanel panelMedian = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		panelMedian.add(new JLabel("-Median:                     radius="));
+		panelMedian.add(medianText);
+		components = panelMedian.getComponents();
+		for (Component component : components)
+			component.setEnabled(false);
+		JPanel panelMean = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		panelMean.add(new JLabel("-Mean:                        radius="));
+		panelMean.add(meanText);
+		components = panelMean.getComponents();
+		for (Component component : components)
+			component.setEnabled(false);
+		JPanel panelUM = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		panelUM.add(new JLabel("-UnsharpMask:           radius="));
+		panelUM.add(USr);
+		panelUM.add(new JLabel("     mask="));
+		panelUM.add(USm);
+		components = panelUM.getComponents();
+		for (Component component : components)
+			component.setEnabled(false);
+		JPanel panelMin = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		panelMin.add(new JLabel("-Minimum:                   radius="));
+		panelMin.add(minText);
+		components = panelMin.getComponents();
+		for (Component component : components)
+			component.setEnabled(false);
+		JPanel panelMax = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		panelMax.add(new JLabel("-Maximum:                  radius="));
+		panelMax.add(maxText);
+		components = panelMax.getComponents();
+		for (Component component : components)
+			component.setEnabled(false);
+		JPanel panelVar = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		panelVar.add(new JLabel("-Variance:                  radius="));
+		panelVar.add(varText);
+		components = panelVar.getComponents();
+		for (Component component : components)
+			component.setEnabled(false);
+		JPanel panelParameters = new JPanel();
+		panelParameters.setLayout(new BoxLayout(panelParameters, BoxLayout.Y_AXIS));
+		panelParameters.add(panelEC);
+		panelParameters.add(panelGB);
+		panelParameters.add(panelMedian);
+		panelParameters.add(panelMean);
+		panelParameters.add(panelUM);
+		panelParameters.add(panelMin);
+		panelParameters.add(panelMax);
+		panelParameters.add(panelVar);
+		// panelParameters.add(buttonParameters);
+		JScrollPane scrollPanePara = new JScrollPane(panelParameters);
+		scrollPanePara.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+		scrollPanePara.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+		userDialog = new UserDialog("Parameters for Pre-Processing Actions ", "", scrollPanePara);
+//		frameParameters.add(scrollPanePara);
+//		frameParameters.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+//		frameParameters.setPreferredSize(new Dimension(400, 200));
+//		frameParameters.pack();
 		JLabel thresholdlLabel = new JLabel("Auto-Threshold Global Method : ");
+		JLabel preprocessinglLabel = new JLabel("Pre-processing Actions: ");
+		JPanel preprocessingPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		preprocessingPanel.add(preprocessinglLabel);
+		preprocessingPanel.add(comboP);
 		thresholdMeths = new JComboBox<String>();
 		String[] thresholds = new String[] { "Default", "Huang", "Huang2", "Intermodes", "Li", "MaxEntropy", "Mean",
 				"MinError(I)", "Minimum", "Otsu", "RenyiEntropy", "Shanbhag", "Triangle", "Yen" };
@@ -429,6 +540,7 @@ public class StartPageModified extends AbstractWizardPage {
 		JPanel panelOptions = new JPanel();
 		panelOptions.setLayout(new BoxLayout(panelOptions, BoxLayout.Y_AXIS));
 		panelOptions.add(cellPanel);
+		panelOptions.add(preprocessingPanel);
 		panelOptions.add(comboPanel);
 		panelOptions.add(panelButtons);
 		JPanel panelNext = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -662,8 +774,74 @@ public class StartPageModified extends AbstractWizardPage {
 		pviewButton1.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				preview1Tool();
-				previewButton = "previewButton";
+				Component[] components = null;
+				if (itemsPreprocessing[2].isSelected() == true) {
+					components = panelEC.getComponents();
+					for (Component component : components)
+						component.setEnabled(true);
+				}
+				if (itemsPreprocessing[3].isSelected() == true) {
+					components = panelGB.getComponents();
+					for (Component component : components)
+						component.setEnabled(true);
+				}
+				if (itemsPreprocessing[4].isSelected() == true) {
+					components = panelMedian.getComponents();
+					for (Component component : components)
+						component.setEnabled(true);
+				}
+
+				if (itemsPreprocessing[5].isSelected() == true) {
+					components = panelMean.getComponents();
+					for (Component component : components)
+						component.setEnabled(true);
+				}
+
+				if (itemsPreprocessing[6].isSelected() == true) {
+					components = panelUM.getComponents();
+					for (Component component : components)
+						component.setEnabled(true);
+				}
+
+				if (itemsPreprocessing[7].isSelected() == true) {
+					components = panelMin.getComponents();
+					for (Component component : components)
+						component.setEnabled(true);
+				}
+
+				if (itemsPreprocessing[8].isSelected() == true) {
+					components = panelMax.getComponents();
+					for (Component component : components)
+						component.setEnabled(true);
+				}
+
+				if (itemsPreprocessing[9].isSelected() == true) {
+					components = panelVar.getComponents();
+					for (Component component : components)
+						component.setEnabled(true);
+				}
+
+				Thread process = null;
+
+				process = new Thread(new Runnable() {
+
+					public void run() {
+						if (itemsPreprocessing[0].isSelected() == true || itemsPreprocessing[1].isSelected() == true
+								|| itemsPreprocessing[2].isSelected() == true
+								|| itemsPreprocessing[3].isSelected() == true
+								|| itemsPreprocessing[4].isSelected() == true
+								|| itemsPreprocessing[5].isSelected() == true
+								|| itemsPreprocessing[6].isSelected() == true
+								|| itemsPreprocessing[7].isSelected() == true
+								|| itemsPreprocessing[8].isSelected() == true
+								|| itemsPreprocessing[9].isSelected() == true)
+							userDialog.show();
+						preview1Tool();
+						previewButton = "previewButton";
+					}
+				});
+				process.start();
+
 			}
 		});
 
@@ -1086,6 +1264,51 @@ public class StartPageModified extends AbstractWizardPage {
 			}
 			ScriptCustomizable_.linesAsAL = null;
 		}
+
+		UserDialog.button.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (itemsPreprocessing[2].isSelected() == true)
+					ecDouble = Double.valueOf(ECtext.getText());
+				if (itemsPreprocessing[3].isSelected() == true)
+					gbDouble = Double.valueOf(GBtext.getText());
+				if (itemsPreprocessing[4].isSelected() == true)
+					medianDouble = Double.valueOf(medianText.getText());
+				if (itemsPreprocessing[5].isSelected() == true)
+					meanDouble = Double.valueOf(meanText.getText());
+				if (itemsPreprocessing[6].isSelected() == true)
+					usrDouble = Double.valueOf(USr.getText());
+				if (itemsPreprocessing[6].isSelected() == true)
+					usmDouble = Double.valueOf(USm.getText());
+				if (itemsPreprocessing[7].isSelected() == true)
+					minDouble = Double.valueOf(minText.getText());
+				if (itemsPreprocessing[8].isSelected() == true)
+					maxDouble = Double.valueOf(maxText.getText());
+				if (itemsPreprocessing[9].isSelected() == true)
+					varDouble = Double.valueOf(varText.getText());
+			}
+		});
+
+		if (itemsPreprocessing[0].isSelected() == true)
+			IJ.run(channelAnal, "Smooth", "");
+		if (itemsPreprocessing[1].isSelected() == true)
+			IJ.run(channelAnal, "Sharpen", "");
+		if (itemsPreprocessing[2].isSelected() == true)
+			IJ.run(channelAnal, "Enhance Contrast...", String.format("saturated=%f", ecDouble));
+		if (itemsPreprocessing[3].isSelected() == true)
+			IJ.run(channelAnal, "Gaussian Blur...", String.format("sigma=%f", gbDouble));
+		if (itemsPreprocessing[4].isSelected() == true)
+			IJ.run(channelAnal, "Median...", String.format("radius=%f", medianDouble));
+		if (itemsPreprocessing[5].isSelected() == true)
+			IJ.run(channelAnal, "Mean...", String.format("radius=%f", meanDouble));
+		if (itemsPreprocessing[6].isSelected() == true)
+			IJ.run(channelAnal, "Unsharp Mask...",
+					String.format("radius=%d", usrDouble) + String.format("mask=%d", usmDouble));
+		if (itemsPreprocessing[7].isSelected() == true)
+			IJ.run(channelAnal, "Minimum...", String.format("radius=%f", minDouble));
+		if (itemsPreprocessing[8].isSelected() == true)
+			IJ.run(channelAnal, "Maximum...", String.format("radius=%f", maxDouble));
+		if (itemsPreprocessing[9].isSelected() == true)
+			IJ.run(channelAnal, "Variance...", String.format("radius=%f", varDouble));
 
 		if (selectedItem.equals("Default") == true)
 			IJ.run(channelAnal, "Auto Threshold", "method=Default white");
@@ -1554,6 +1777,122 @@ public class StartPageModified extends AbstractWizardPage {
 		g2.drawImage(srcImg, 0, 0, w, h, null);
 		g2.dispose();
 		return resizedImg;
+	}
+
+	class CheckableItem {
+		public final String text;
+		private boolean selected;
+
+		protected CheckableItem(String text, boolean selected) {
+			this.text = text;
+			this.selected = selected;
+		}
+
+		public boolean isSelected() {
+			return selected;
+		}
+
+		public void setSelected(boolean selected) {
+			this.selected = selected;
+		}
+
+		@Override
+		public String toString() {
+			return text;
+		}
+	}
+
+	class CheckedComboBox<E extends CheckableItem> extends JComboBox<E> {
+		private boolean keepOpen;
+		private transient ActionListener listener;
+
+		protected CheckedComboBox() {
+			super();
+		}
+
+		protected CheckedComboBox(ComboBoxModel<E> model) {
+			super(model);
+		}
+
+		@Override
+		public Dimension getPreferredSize() {
+			return new Dimension(200, 20);
+		}
+
+		@Override
+		public void updateUI() {
+			setRenderer(null);
+			removeActionListener(listener);
+			super.updateUI();
+			listener = e -> {
+				if ((e.getModifiers() & AWTEvent.MOUSE_EVENT_MASK) != 0) {
+					updateItem(getSelectedIndex());
+					keepOpen = true;
+				}
+			};
+			setRenderer(new CheckBoxCellRenderer<>());
+			addActionListener(listener);
+			getInputMap(JComponent.WHEN_FOCUSED).put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), "checkbox-select");
+			getActionMap().put("checkbox-select", new AbstractAction() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					Accessible a = getAccessibleContext().getAccessibleChild(0);
+					if (a instanceof ComboPopup) {
+						updateItem(((ComboPopup) a).getList().getSelectedIndex());
+					}
+				}
+			});
+		}
+
+		protected void updateItem(int index) {
+			if (isPopupVisible()) {
+				E item = getItemAt(index);
+				item.setSelected(!item.isSelected());
+				setSelectedIndex(-1);
+				setSelectedItem(item);
+			}
+		}
+
+		@Override
+		public void setPopupVisible(boolean v) {
+			if (keepOpen) {
+				keepOpen = false;
+			} else {
+				super.setPopupVisible(v);
+			}
+		}
+	}
+
+	class CheckBoxCellRenderer<E extends CheckableItem> implements ListCellRenderer<E> {
+		private final JLabel label = new JLabel(" ");
+		private final JCheckBox check = new JCheckBox(" ");
+
+		@Override
+		public Component getListCellRendererComponent(JList<? extends E> list, E value, int index, boolean isSelected,
+				boolean cellHasFocus) {
+			if (index < 0) {
+				String txt = getCheckedItemString(list.getModel());
+				label.setText(txt.isEmpty() ? " " : txt);
+				return label;
+			} else {
+				check.setText(Objects.toString(value, ""));
+				check.setSelected(value.isSelected());
+				if (isSelected) {
+					check.setBackground(list.getSelectionBackground());
+					check.setForeground(list.getSelectionForeground());
+				} else {
+					check.setBackground(list.getBackground());
+					check.setForeground(list.getForeground());
+				}
+				return check;
+			}
+		}
+
+		private <E extends CheckableItem> String getCheckedItemString(ListModel<E> model) {
+			return IntStream.range(0, model.getSize()).mapToObj(model::getElementAt).filter(CheckableItem::isSelected)
+					.map(Objects::toString).sorted().collect(Collectors.joining(", "));
+
+		}
 	}
 
 }
