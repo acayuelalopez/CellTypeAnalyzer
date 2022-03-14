@@ -180,7 +180,7 @@ public class JFrameWizard extends JFrame implements Wizard {
 		int xPosition = (screenSize.width / 2) - (defaultminimumSize.width / 2);
 		int yPosition = (screenSize.height / 2) - (defaultminimumSize.height / 2);
 		setLocation(xPosition, yPosition);
-		//setSize(550, 700);
+		// setSize(550, 700);
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 	}
 
@@ -257,7 +257,7 @@ public class JFrameWizard extends JFrame implements Wizard {
 		wizardPageContainerConstraint.insets = new Insets(5, 5, 5, 5);
 		JScrollPane scrollPane = new JScrollPane(wizardPageContainer);
 		scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+		scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 		getContentPane().add(scrollPane, wizardPageContainerConstraint);
 
 		GridBagConstraints separatorConstraints = new GridBagConstraints();
@@ -339,10 +339,10 @@ public class JFrameWizard extends JFrame implements Wizard {
 
 			Dimension newSize = new Dimension(currentSize);
 			newSize.width = Math.max(currentSize.width, preferredSize.width);
-			newSize.height = Math.max(currentSize.height, preferredSize.height)-60;
+			newSize.height = Math.max(currentSize.height, preferredSize.height) - 60;
 
 			setMinimumSize(newSize);
-			//setMinimumSize(new Dimension(500,400));
+			// setMinimumSize(new Dimension(500,400));
 		}
 
 		@Override
@@ -1196,30 +1196,22 @@ public class JFrameWizard extends JFrame implements Wizard {
 
 									for (int ux = 0; ux < classParameters.length; ++ux) {
 										for (int c = 0; c < model1.getRowCount(); ++c) {
+
 											if (classParameters[ux].contains("-" + (ux + 1))
 													&& classMinValues[ux].contains("-" + (ux + 1))
 													&& classMaxValues[ux].contains("-" + (ux + 1))
-													&& (Double) table1.getModel()
-															.getValueAt(
-																	c, table1
-																			.getColumn(classParameters[ux].substring(0,
-																					classParameters[ux]
+													&& (Double) table1.getModel().getValueAt(c, table1.getColumnModel()
+															.getColumnIndex(classParameters[ux].substring(0,
+																	classParameters[ux].lastIndexOf("-")))) >= Double
+																			.parseDouble(classMinValues[ux].substring(0,
+																					classMinValues[ux]
 																							.lastIndexOf("-")))
-																			.getModelIndex()) >= Double.parseDouble(
-																					classMinValues[ux].substring(0,
-																							classMinValues[ux]
-																									.lastIndexOf("-")))
-													&& (Double) table1.getModel()
-															.getValueAt(
-																	c, table1
-																			.getColumn(classParameters[ux].substring(0,
-																					classParameters[ux]
-																							.lastIndexOf("-")))
-																			.getModelIndex()) <= Double.parseDouble(
-																					classMaxValues[ux].substring(0,
-																							classMaxValues[ux]
-																									.lastIndexOf(
-																											"-")))) {
+													&& (Double) table1.getModel().getValueAt(c, table1.getColumnModel()
+															.getColumnIndex(classParameters[ux].substring(0,
+																	classParameters[ux].lastIndexOf("-")))) <= Double
+																			.parseDouble(classMaxValues[ux].substring(0,
+																					classMaxValues[ux]
+																							.lastIndexOf("-")))) {
 												model1.setValueAt(classNames[0], c,
 														table1.convertColumnIndexToModel(0));
 
@@ -1232,19 +1224,19 @@ public class JFrameWizard extends JFrame implements Wizard {
 
 									for (int u = 0; u < model1.getRowCount(); ++u) {
 										if ((Double) table1.getModel().getValueAt(u,
-												table1.getColumn("FociNuc").getModelIndex()) >= Double
+												table1.getColumnModel().getColumnIndex("FociNuc")) >= Double
 														.parseDouble(classMinValues[0].substring(0,
 																classMinValues[0].lastIndexOf("-")))
 												&& (Double) table1.getModel().getValueAt(u,
-														table1.getColumn("FociNuc").getModelIndex()) <= Double
+														table1.getColumnModel().getColumnIndex("FociNuc")) <= Double
 																.parseDouble(classMaxValues[0].substring(0,
 																		classMaxValues[0].lastIndexOf("-")))
 												&& (Double) table1.getModel().getValueAt(u,
-														table1.getColumn("Mean").getModelIndex()) >= Double
+														table1.getColumnModel().getColumnIndex("Mean")) >= Double
 																.parseDouble(classMinValues[1].substring(0,
 																		classMinValues[1].lastIndexOf("-")))
 												&& (Double) table1.getModel().getValueAt(u,
-														table1.getColumn("Mean").getModelIndex()) <= Double
+														table1.getColumnModel().getColumnIndex("Mean")) <= Double
 																.parseDouble(classMaxValues[1].substring(0,
 																		classMaxValues[1].lastIndexOf("-")))) {
 											model1.setValueAt(classNames[0], u, table1.convertColumnIndexToModel(0));
