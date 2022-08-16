@@ -42,7 +42,7 @@
   <img width="800" height="450" src="https://user-images.githubusercontent.com/83207172/131348971-2afce5e4-03ec-41cf-9d76-c6607047fdba.png">
 </p>
 ######   **Scriptable Pre-Processing Actions.** 
-Additionally, by clicking on `Script Button`, a dialog window will be displayed in which user will be prompted to browse for either `macros (.txt or .ijm for ImageJ 1.x macros)` or `scripts files (.js for javascript, .bsh for beanshell or .py for python)` to be opened and then, using the `Run button`, run it. It may be worth noting either macros or script files must contain a `"_"` (underscore) character, e.g. `"HelloWorld_.py"` to be recognised. In addition, users are provided by a script editor to write their own code in any of ImageJ's supported languages `(BeanShell, JavaScript, Macro or Python)` without saving or even, likewise, copying it to the clipboard `(crtl-a, ctrl-c)` and paste `(ctrl-v)` on script editor area, then run it. Either way, whether running is successful, pre-processing actions under the code will be applied to objects belonging DAPI channel.
+Additionally, by clicking on `Script Button`, a dialog window will be displayed in which  users are provided by a script editor to write their own code in any of ImageJ's macro supported language without saving or even, likewise, copying it to the clipboard `(crtl-a, ctrl-c)` and paste `(ctrl-v)` on script editor area, then run it. Either way, whether running is successful, pre-processing actions under the code will be applied to objects belonging DAPI channel.
 
 **(Step IV).** ***We repeat the same actions as in Step III, but now on Marker III.*** Then, we can add the constraints on Marker III to the definition of each cell type. Cells are assigned to each one of the types if they meet all the conditions on Markers II and III. Note that cell types can also involve conditions solely on Marker II or Marker III.
 <p align="center">
@@ -80,7 +80,7 @@ https://user-images.githubusercontent.com/83207172/145422218-4af40a00-ff3c-4953-
 <a name="references"></a>
 ## References
 <a id="1">[1]</a> 
-Schindelin, J., Arganda-Carreras, I., Frise, E., Kaynig, V., Longair, M., Pietzsch, T., … Cardona, A. (2012).  
-Fiji: an open-source platform for biological-image analysis. 
-Nature Methods, 9(7), 676–682. [![DOI:10.1038/nmeth.2019](http://img.shields.io/badge/DOI-10.1101/2021.01.08.425840-B31B1B.svg)](https://doi.org/10.1038/nmeth.2019)
+Cayuela López, A., Gómez-Pedrero, J., Blanco, A., & Sorzano, C. (2022).  
+ Cell-TypeAnalyzer: A flexible Fiji/ImageJ plugin to classify cells according to user-defined criteria. 
+Biological Imaging, 2,E5. [![DOI:10.1017/S2633903X22000058](http://img.shields.io/badge/DOI-10.1101/2021.01.08.425840-B31B1B.svg)](https://doi.org/10.1038/nmeth.2019)
 
