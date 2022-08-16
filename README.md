@@ -23,7 +23,7 @@
 ## Overview of Procedure
   **_Cell-TypeAnalyzer_** can work with images with up to three color channels. One of the channels, called Marker I, defines what a cell is and what is not. This channel can be a marker of cytoplasm, nuclei, or any other cellular structure of interest. Once we have identified cells with Marker I, Markers II and III will define the cell types. 
  
- A high-level overview of the Cell-TypeAnalyzer procedure involved is shown (see Fig.~\ref{fig:overview}). The processing actions consists of six major stages:  
+ A high-level overview of the Cell-TypeAnalyzer procedure involved is shown. The processing actions consists of six major stages:  
 
 **(Step I).** After loading the raw RGB images, we need to establish the correspondence between the color channels and the marker names and roles. At this point, we may perform a spatial calibration (give the pixel size in physical units) to get measurements in real length units or pixels otherwise. We may also restrict the analysis to a Region-of-interest (ROI) that must be a closed shape. The plugin shows a histogram of the pixel values in each one of the channels as visual feedback.
  
